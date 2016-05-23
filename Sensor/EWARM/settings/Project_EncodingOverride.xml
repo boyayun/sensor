@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+
+<userOverrides>
+  <override>
+    <path>E:\TCL\PROJECT\sensor\software\code\inc\sensorapp.h</path>
+    <encoding>GB2312</encoding>
+  </override>
+  <override>
+    <path>E:\TCL\PROJECT\sensor\software\code\sensorapp\sensorapp.c</path>
+    <encoding>GB2312</encoding>
+  </override>
+</userOverrides>
+
+
