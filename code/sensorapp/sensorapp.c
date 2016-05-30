@@ -1,6 +1,7 @@
 #include "sensorapp.h"
 #include "common.h"
 #include "i2c.h"
+#include "adc.h"
 
 /*----------------------------温湿度采集----------------------------*/
 htsensorstu htsensor;		//温湿度传感器控制
@@ -31,6 +32,7 @@ inline void HTSensorAcqStop()
 /******************************************************
 Fun:温湿度传感器复位
 Input:void
+
 Output:void
 Return:0:复位失败 1:复位成功
 ******************************************************/
@@ -193,8 +195,6 @@ _Bool TValueAcq(tacqstu* tvalue)
     {
         tvalue->dir = 0;		//正
         tvalue->value = tempvalue - 4685;
-        
-        
     }
     else
     {
@@ -249,6 +249,7 @@ void AcqDataTest()
 {
 	SensorLog("采集数据开始处理");
 	memcpy(&acqdata.htdata.htvalue, &htvalue, sizeof(htacqstu));
+	memcpy(&acqdata.airquadata, &airdata.airquadata, 1);
 	if(0 == htvalue.tvalue.dir)
 	{
 		printf("温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htdata.htvalue.tvalue.value)/100, (float)(acqdata.htdata.htvalue.hvalue)/100);
@@ -257,6 +258,7 @@ void AcqDataTest()
     {
 		printf("温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htdata.htvalue.tvalue.value)/100, (float)(acqdata.htdata.htvalue.hvalue)/100);
     }
+    printf("空气质量:%.2d%", acqdata.airquadata);
 }
 
 /******************************************************
@@ -297,4 +299,106 @@ void SensorDataHandle()
 		AcqDataTest();
 	}
 }
+//////////////////////////////华丽的分割线///////////////////////////
+
+/*----------------------------空气质量采集----------------------------*/
+airsensorstu airsensor;
+airacqdatastu airdata;
+
+/******************************************************
+Fun:ADC空气采集初始化
+Input:void
+Output:void
+Return:0:初始化失败 1:初始化成功
+******************************************************/
+_Bool ADCAirquaInit()
+{
+//	HAL_ADCEx_InjectedStart_IT(&hadc);
+	HAL_ADC_Start_IT(&hadc);
+	return 1;
+}
+
+/******************************************************
+Fun:空气质量传感器采集是否开始
+Input:void
+Output:void
+Return:TRUE:开始采集，FALSE:未开始采集或采集结束
+******************************************************/
+_Bool IsAirSensorAcqStart()
+{
+	return airsensor.acqflag;
+}
+
+/******************************************************
+Fun:空气质量传感器采集结束
+Input:void
+Output:void
+Return:void
+******************************************************/
+inline void AirSensorAcqStop()
+{
+	airsensor.acqflag = 0;
+}
+
+/******************************************************
+Fun:空气质量传感器采集处理
+Input:void
+Output:void
+Return:void
+******************************************************/
+void AirSensorAcqHandle()
+{
+	if(IsAirSensorAcqStart())
+	{
+        AirSensorAcqStop();
+
+        u8 static num = 0;		//为了提高准确性，进行多次采样
+		static u16 tempairacq = 0;
+		u8 vrl = 0;		//Vout(VRl)输出电压，精度0.1V
+		u32 rsvalue = 0;	//Rs电阻值，精度1
+
+		tempairacq += airdata.airacqvalue;
+		num++;
+		if(3 == num)
+		{
+			num = 0;
+			tempairacq /= 3;
+			vrl = (u8)((float)tempairacq/4096*VREF);
+			rsvalue = (VTEST-vrl)*RLVALUE/vrl;
+			airdata.airquadata = rsvalue*100/ROVALUE;
+			tempairacq = 0;
+		}
+    }
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+	static u8 num = 0;
+	
+	switch(num)
+	{
+		case 0:
+			airdata.airacqvalue = hadc->Instance->DR;
+			MODIFY_REG(hadc->Instance->SQR5,
+				ADC_SQR5_RK(ADC_SQR5_SQ1, 1),
+		    	ADC_SQR5_RK(ADC_CHANNEL_2, 1));
+			break;
+		
+		case 1:
+			MODIFY_REG(hadc->Instance->SQR5,
+               ADC_SQR5_RK(ADC_SQR5_SQ1, 1),
+               ADC_SQR5_RK(ADC_CHANNEL_1, 1));
+			break;
+		
+		default:
+			break;
+	}
+	num++;
+	if(2 == num)
+	{
+		num = 0;
+	}
+	HAL_ADC_Start_IT(hadc);
+}
+
 //////////////////////////////华丽的分割线///////////////////////////

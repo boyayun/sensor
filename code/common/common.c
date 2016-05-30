@@ -100,6 +100,11 @@ void HardInit(void)
 	{
 		SensorLog("温湿度传感器初始化失败");
 	}
+	
+	if(!ADCAirquaInit())
+	{
+		SensorLog("空气质量传感器初始化失败");
+	}
 }
 
 /******************************************
@@ -124,8 +129,9 @@ void MainHandle()
 	if(0 != secflag)
 	{
 		secflag = 0;
-		HTSensorAcqStart();
-
+		HTSensorAcqStart();		
+		AirSensorAcqStart();	
+		
 		static u8 acqsec = 0;
 		acqsec++;
 		if(5 == acqsec)
@@ -133,9 +139,11 @@ void MainHandle()
 			acqsec = 0;
 			AcqDataStart();
 		}
+	
 	}
 
 	HTSensorAcqHandle();
+	AirSensorAcqHandle();
 	SensorDataHandle();
 	
 }

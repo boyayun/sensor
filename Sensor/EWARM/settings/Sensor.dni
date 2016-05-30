@@ -12,7 +12,7 @@ ByteLimit=50
 stlinkserialNo=7BA89FD3
 stlinkfoundProbes=
 [DebugChecksum]
-Checksum=-1144341501
+Checksum=-1812420021
 [Exceptions]
 StopOnUncaught=_ 0
 StopOnThrow=_ 0
@@ -39,6 +39,15 @@ ITMportsEnable=0
 ITMportsTermIO=0
 ITMportsLogFile=0
 ITMlogFile=$PROJ_DIR$\ITM.log
+[struct_types]
+Fmt0=ADC_HandleTypeDef-State	4	0
+Fmt1=ADC_TypeDef-DR	4	0
+Fmt2=ADC_TypeDef-SR	4	0
+Fmt3=airacqdatastu-airquadata	3	0
+[watch_formats]
+Fmt0={W}1:temp	4	0
+Fmt1={W}1:temp1	4	0
+Fmt2={W}1:vrl	3	0
 [Trace2]
 Enabled=0
 ShowSource=0
