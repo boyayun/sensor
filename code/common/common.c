@@ -134,18 +134,21 @@ void MainHandle()
 		
 		static u8 acqsec = 0;
 		acqsec++;
-		if(5 == acqsec)
+		if(0 == acqsec%5)
 		{
-			acqsec = 0;
 			AcqDataStart();
+			if(30 == acqsec)
+			{
+				acqsec = 0;
+				PM25PeriodTimeUp();
+			}
 		}
-	
 	}
 
 	HTSensorAcqHandle();
 	AirSensorAcqHandle();
+	PM25AcqHandle();
 	SensorDataHandle();
-	
 }
 
 /******************************************
@@ -245,6 +248,11 @@ void HAL_SYSTICK_Callback()
 	{
 		secflag = 1;
 		secondcnt = 1000;
+	}
+
+	if(IsPM25LowlevAcqStart())
+	{
+		pm25data.lowlevvalue++;
 	}
 /*************秒事件处理***************/	
 

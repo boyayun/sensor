@@ -236,71 +236,6 @@ void HTSensorAcqHandle()
 }
 //////////////////////////////华丽的分割线///////////////////////////
 
-/*----------------------------传感器采集----------------------------*/
-acqdatastu acqdata;     //采集数据
-
-/******************************************************
-Fun:采集数据测试处理
-Input:void
-Output:void
-Return:void
-******************************************************/
-void AcqDataTest()
-{
-	SensorLog("采集数据开始处理");
-	memcpy(&acqdata.htdata.htvalue, &htvalue, sizeof(htacqstu));
-	memcpy(&acqdata.airquadata, &airdata.airquadata, 1);
-	if(0 == htvalue.tvalue.dir)
-	{
-		printf("温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htdata.htvalue.tvalue.value)/100, (float)(acqdata.htdata.htvalue.hvalue)/100);
-	}
-    else
-    {
-		printf("温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htdata.htvalue.tvalue.value)/100, (float)(acqdata.htdata.htvalue.hvalue)/100);
-    }
-    printf("空气质量:%.2d%", acqdata.airquadata);
-}
-
-/******************************************************
-Fun:采集到的数据是否开始处理
-Input:void
-Output:void
-Return:TRUE:开始采集，FALSE:未开始采集或采集结束
-******************************************************/
-_Bool IsAcqDataStart()
-{
-	return acqdata.datasw;
-}
-
-/******************************************************
-Fun:温湿度传感器采集结束
-Input:void
-Output:void
-Return:void
-******************************************************/
-inline void AcqDataStop()
-{
-	acqdata.datasw = 0;
-}
-
-/******************************************************
-Fun:传感器数据处理主循环
-Input:void
-Output:void
-Return:void
-******************************************************/
-void SensorDataHandle()                                                                      
-{
-	if(IsAcqDataStart())
-	{
-		AcqDataStop();
-
-		//采集数据处理
-		AcqDataTest();
-	}
-}
-//////////////////////////////华丽的分割线///////////////////////////
-
 /*----------------------------空气质量采集----------------------------*/
 airsensorstu airsensor;
 airacqdatastu airdata;
@@ -400,5 +335,254 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 	}
 	HAL_ADC_Start_IT(hadc);
 }
+//////////////////////////////华丽的分割线///////////////////////////
+
+/*----------------------------PM2.5采集----------------------------*/
+pm25acqstu	pm25acq;
+pm25datastu	pm25data;
+
+/******************************************************
+Fun:PM2.5采集初始化
+Input:void
+Output:void
+Return:0:初始化失败 1:初始化成功
+******************************************************/
+_Bool PM25AcqInit()
+{
+	return 1;
+}
+
+/******************************************************
+Fun:是否PM2.5传感器采集周期到
+Input:void
+Output:void
+Return:TRUE:采集周期到，FALSE:采集周期没有到
+******************************************************/
+_Bool IsPM25PeriodTimeUp()
+{
+	return pm25acq.periodtimeup;
+}
+
+/******************************************************
+Fun:PM2.5采集周期时间未到
+Input:void
+Output:void
+Return:void
+******************************************************/
+inline void PM25PeriodTimeNoUp()
+{
+	pm25acq.periodtimeup = 0;
+}
+
+/******************************************************
+Fun:计算空气质量AQI
+Input:pm2.5的值ug每立方米
+Output:void
+Return:void
+******************************************************/
+void AqiCalculate(u16 pm25value)
+{
+	if(pm25value <= 500)
+	{
+		u16 aqih = 0;	//与BPHi对应的空气质量分指数
+		u16 aqil = 0;	//与BPLo对应的空气质量分指数
+		u16 pmh = 0;	//与CP相近的污染物浓度限值的高位值
+		u16 pml = 0;	//与CP相近的污染物浓度限值的低位值
+		
+		if(pm25value <= 35)				//优
+		{
+			aqil = 0;
+			aqih = 50;
+			pml = 0;
+			pmh = 35;
+		}
+		else if((35 < pm25value) && (pm25value <= 75))		//良
+		{
+			aqil = 50;
+			aqih = 100;
+			pml = 35;
+			pmh = 75;
+		}
+		else if((75 < pm25value) && (pm25value <= 115))		//轻度污染
+		{
+			aqil = 100;
+			aqih = 150;
+			pml = 75;
+			pmh = 115;
+		}
+		else if((115 < pm25value) && (pm25value <= 150))		//中度污染
+		{
+			aqil = 150;
+			aqih = 200;
+			pml = 115;
+			pmh = 150;
+		}
+		else if((150 < pm25value) && (pm25value <= 250))		//重度污染
+		{
+			aqil = 200;
+			aqih = 300;
+			pml = 150;
+			pmh = 250;
+		}
+		else if((250 < pm25value) && (pm25value <= 350))		//严重污染
+		{
+			aqil = 300;
+			aqih = 400;
+			pml = 250;
+			pmh = 350;
+		}
+		else
+		{
+			aqil = 400;
+			aqih = 500;
+			pml = 350;
+			pmh = 500;
+		}
+
+		pm25data.aqi = (pm25value - pml)*(aqih-aqil)/(pmh-pml)+aqil;
+	}
+	else	//AQI爆表
+	{
+		pm25data.aqi = 500;
+	}
+}
+
+/******************************************************
+Fun:PM2.5低电平采集开始
+Input:void
+Output:void
+Return:void
+******************************************************/
+void inline PM25LowlevAcqStart()
+{
+	pm25acq.lowlevacqstart = 1;
+}
+
+/******************************************************
+Fun:PM2.5采集是否开始
+Input:void
+Output:void
+Return:TRUE:开始采集，FALSE:未开始采集或采集结束
+******************************************************/
+_Bool IsPM25LowlevAcqStart()
+{
+	return pm25acq.lowlevacqstart;
+}
+
+/******************************************************
+Fun:PM2.5低电平采集停止
+Input:void
+Output:void
+Return:void
+******************************************************/
+inline void PM25LowlevAcqStop()
+{
+	pm25acq.lowlevacqstart = 0;
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	if(GPIO_PIN_SET == HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3))
+	{
+		PM25LowlevAcqStop();
+	}
+	else
+	{
+		PM25LowlevAcqStart();
+	}
+}
+
+/******************************************************
+Fun:PM2.5传感器采集处理
+Input:void
+Output:void
+Return:void
+******************************************************/
+void PM25AcqHandle()
+{
+	if(IsPM25PeriodTimeUp())
+	{
+		PM25PeriodTimeNoUp();
+		
+		float rt = 0;		//低脉冲率：RT=LT/UTx100%
+
+		rt = (float)pm25data.lowlevvalue / PM25PERIOD*100;
+		pm25data.countratio = (u16)(rt*100/PMFACTOR*1000);
+		pm25data.massratio = (u16)((float)pm25data.countratio*MALMASS/VOLCONVERT/NAFACTOR);
+		AqiCalculate(pm25data.massratio);
+
+		pm25data.lowlevvalue = 0;
+	}
+}
 
 //////////////////////////////华丽的分割线///////////////////////////
+
+/*----------------------------传感器采集----------------------------*/
+acqupstu acqdata;     //采集数据
+
+/******************************************************
+Fun:采集数据测试处理
+Input:void
+Output:void
+Return:void
+******************************************************/
+void AcqDataTest()
+{
+	SensorLog("采集数据开始处理");
+	memcpy(&acqdata.htup.htvalue, &htvalue, sizeof(htacqstu));
+	if(0 == htvalue.tvalue.dir)
+	{
+		printf("    温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htup.htvalue.tvalue.value)/100, (float)(acqdata.htup.htvalue.hvalue)/100);
+	}
+    else
+    {
+		printf("    温度:%.2f,湿度:%.2f%\r\n", (float)(acqdata.htup.htvalue.tvalue.value)/100, (float)(acqdata.htup.htvalue.hvalue)/100);
+    }
+    
+    acqdata.airquaup.airquavalue = airdata.airquadata;
+    printf("    空气质量:%.2d%\r\n", acqdata.airquaup.airquavalue);
+
+    memcpy(&acqdata.pm25up.countratio, &pm25data.countratio, 6);
+    printf("    PM2.5粒子数:%.2d/283mil, 质量浓度:%.2dug/m3, 空气质量指数AQI: %.2d\r\n", acqdata.pm25up.countratio, acqdata.pm25up.massratio, acqdata.pm25up.aqi);
+}
+
+/******************************************************
+Fun:采集到的数据是否开始处理
+Input:void
+Output:void
+Return:TRUE:开始采集，FALSE:未开始采集或采集结束
+******************************************************/
+_Bool IsAcqDataStart()
+{
+	return acqdata.upsw;
+}
+
+/******************************************************
+Fun:温湿度传感器采集结束
+Input:void
+Output:void
+Return:void
+******************************************************/
+inline void AcqDataStop()
+{
+	acqdata.upsw = 0;
+}
+
+/******************************************************
+Fun:传感器数据处理主循环
+Input:void
+Output:void
+Return:void
+******************************************************/
+void SensorDataHandle()                                                                      
+{
+	if(IsAcqDataStart())
+	{
+		AcqDataStop();
+
+		//采集数据处理
+		AcqDataTest();
+	}
+}
+//////////////////////////////华丽的分割线///////////////////////////
+
