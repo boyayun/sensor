@@ -1,4 +1,3 @@
----- Init.DMAContinuousRequests Matches (3 in 2 files) ----
-Adc.c (e:\tcl\project\sensor\software\sensor\src):  hadc.Init.DMAContinuousRequests = DISABLE;
-Stm32l1xx_hal_adc.c (e:\tcl\project\sensor\software\sensor\drivers\stm32l1xx_hal_driver\src):  assert_param(IS_FUNCTIONAL_STATE(hadc->Init.DMAContinuousRequests));
-Stm32l1xx_hal_adc.c (e:\tcl\project\sensor\software\sensor\drivers\stm32l1xx_hal_driver\src):                ADC_CR2_DMACONTREQ(hadc->Init.DMAContinuousRequests) |
+---- HAL_GPIO_EXTI_IRQHandler Matches (2 in 2 files) ----
+Stm32l1xx_hal_gpio.c (e:\tcl\project\sensor\software\sensor\drivers\stm32l1xx_hal_driver\src):void HAL_GPIO_EXTI_IRQHandler(uint16_t GPIO_Pin)
+Stm32l1xx_hal_gpio.h (e:\tcl\project\sensor\software\sensor\drivers\stm32l1xx_hal_driver\inc):void              HAL_GPIO_EXTI_IRQHandler(uint16_t GPIO_Pin);

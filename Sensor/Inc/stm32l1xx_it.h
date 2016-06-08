@@ -53,7 +53,6 @@ void UsageFault_Handler(void);
 void DebugMon_Handler(void);
 void SysTick_Handler(void);
 void EXTI3_IRQHandler(void);
-void ADC1_IRQHandler(void);
 void TIM2_IRQHandler(void);
 void I2C2_EV_IRQHandler(void);
 void I2C2_ER_IRQHandler(void);

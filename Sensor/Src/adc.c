@@ -69,7 +69,7 @@ void MX_ADC_Init(void)
 
     /**Configure for the selected ADC regular channel its corresponding rank in the sequencer and its sample time. 
     */
-  sConfig.Channel = ADC_CHANNEL_1;
+  sConfig.Channel = ADC_CHANNEL_2;
   sConfig.Rank = 1;
   sConfig.SamplingTime = ADC_SAMPLETIME_16CYCLES;
   HAL_ADC_ConfigChannel(&hadc, &sConfig);
@@ -91,16 +91,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
     /**ADC GPIO Configuration    
     PA1     ------> ADC_IN1
     PA2     ------> ADC_IN2
-    PA4     ------> ADC_IN4 
+    PA4     ------> ADC_IN4
+    PA5     ------> ADC_IN5 
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4;
+    GPIO_InitStruct.Pin = GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_5;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-    /* Peripheral interrupt init */
-    HAL_NVIC_SetPriority(ADC1_IRQn, 3, 0);
-    HAL_NVIC_EnableIRQ(ADC1_IRQn);
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
   /* USER CODE END ADC1_MspInit 1 */
@@ -121,12 +119,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
     /**ADC GPIO Configuration    
     PA1     ------> ADC_IN1
     PA2     ------> ADC_IN2
-    PA4     ------> ADC_IN4 
+    PA4     ------> ADC_IN4
+    PA5     ------> ADC_IN5 
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4);
-
-    /* Peripheral interrupt Deinit*/
-    HAL_NVIC_DisableIRQ(ADC1_IRQn);
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_5);
 
   }
   /* USER CODE BEGIN ADC1_MspDeInit 1 */

@@ -131,7 +131,9 @@ void MainHandle()
 		secflag = 0;
 		HTSensorAcqStart();		
 		AirSensorAcqStart();	
-		
+		Co2SensorAcqStart();
+		SmokeSensorAcqStart();
+		TherSensorAcqStart();
 		static u8 acqsec = 0;
 		acqsec++;
 		if(0 == acqsec%5)
@@ -145,9 +147,12 @@ void MainHandle()
 		}
 	}
 
-	HTSensorAcqHandle();
-	AirSensorAcqHandle();
-	PM25AcqHandle();
+//	HTSensorAcqHandle();
+//	AirSensorAcqHandle();
+	Co2SensorAcqHandle();
+//	PM25AcqHandle();
+//	SmokeSensorAcqHandle();
+	TherSensorAcqHandle();
 	SensorDataHandle();
 }
 

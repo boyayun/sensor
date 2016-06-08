@@ -4,6 +4,10 @@
 #include "common.h"
 
 #define SensorLog(M, ...)   custom_log("数据采集", M, ##__VA_ARGS__)
+typedef struct
+{
+	_Bool acqflag;		//确定什么进行采集，1有效
+}sensoracqstu;			//传感器控制结构体
 
 /*----------------------------温湿度采集----------------------------*/
 #define HTSENSORADDR    0x80		//温湿度传感器I2C地址
@@ -28,12 +32,12 @@ typedef struct
 	tacqstu tvalue;		
 }htacqstu;			//温湿度值结构体
 
-typedef struct
-{
-	_Bool acqflag;		//确定什么进行采集，1有效
-}htsensorstu;			//温湿度传感器控制结构体
+//typedef struct
+//{
+//	_Bool acqflag;		//确定什么进行采集，1有效
+//}htsensorstu;			//温湿度传感器控制结构体
 
-extern htsensorstu htsensor;		//温湿度传感器采集结构体
+extern sensoracqstu htsensor;		//温湿度传感器采集结构体
 
 /******************************************************
 Fun:温湿度传感器采集开始
@@ -56,10 +60,10 @@ extern void HTSensorAcqHandle();
 #define VREF   30		//参考电压 3V,精度0.1
 #define VTEST  50		//测试电压 5V，精度0.1
 
-typedef struct
-{
-	_Bool acqflag;		//确定什么进行采集，1有效
-}airsensorstu;		//空气质量采集结构体
+//typedef struct
+//{
+//	_Bool acqflag;		//确定什么进行采集，1有效
+//}airsensorstu;		//空气质量采集结构体
 
 typedef struct
 {
@@ -67,7 +71,7 @@ typedef struct
 	u8 airquadata;		//空气质量数据 RS/RO，精度0.01
 }airacqdatastu;		//空气质量数据结构体
 
-extern airsensorstu airsensor;
+extern sensoracqstu airsensor;
 extern airacqdatastu airdata;
 /******************************************************
 Fun:空气质量采集开始
@@ -82,7 +86,39 @@ void inline AirSensorAcqStart()
 
 extern _Bool ADCAirquaInit();
 extern void AirSensorAcqHandle();
+//////////////////////////////华丽的分割线///////////////////////////
 
+/*----------------------------CO2传感器采集----------------------------*/
+#define CO2LISTNUM 90	//CO2数据的个数
+#define CO2VREF   3000  //参考电压 3000mV
+#define CO2FACTOR 5	    //co2电压放大倍数
+
+//typedef struct
+//{
+//	_Bool acqflag;		//确定什么进行采集，1有效
+//}co2acqstu;			//CO2采集结构体
+
+typedef struct
+{
+	u16 acqvalue;	//采集的电压值
+	u16 acqdata;		//CO2数据 ppm
+}co2datastu;		//CO2数据结构体
+
+extern sensoracqstu co2sensor;
+extern co2datastu co2data;
+
+/******************************************************
+Fun:CO2传感器采集开始
+Input:void
+Output:void
+Return:void
+******************************************************/
+void inline Co2SensorAcqStart()
+{
+	co2sensor.acqflag = 1;
+}
+
+extern void Co2SensorAcqHandle();
 //////////////////////////////华丽的分割线///////////////////////////
 
 /*----------------------------PM2.5采集----------------------------*/
@@ -128,7 +164,66 @@ extern _Bool IsPM25LowlevAcqStart();
 extern void PM25AcqHandle();
 //////////////////////////////华丽的分割线///////////////////////////
 
+/*----------------------------烟雾传感器采集----------------------------*/
+#define SMOKELISTNUM 36 //烟雾数据个数
+#define SMOKEVREF  60	//参考电压  精度0.01V
+#define HUMANTEMP 25	//人体体表温度
+//typedef struct
+//{
+//	_Bool acqflag;		//确定什么进行采集，1有效
+//}smokeacqstu;			//烟雾采集结构体
+
+typedef struct
+{
+	u16 acqvalue;	//采集的电压值
+	u8 acqdata;		//烟雾数据 %
+}smokedatastu;	//烟雾数据结构体
+
+extern sensoracqstu smokeacq;	//烟雾采集结构体
+extern smokedatastu smokedata; //烟雾数据结构体
+/******************************************************
+Fun:烟雾传感器采集开始
+Input:void
+Output:void
+Return:void
+******************************************************/
+void inline SmokeSensorAcqStart()
+{
+	smokeacq.acqflag = 1;
+}
+
+extern void SmokeSensorAcqHandle();
+//////////////////////////////华丽的分割线///////////////////////////
+
+/*----------------------------热电堆传感器采集----------------------------*/
+#define THERLISTNUM 21 //热电堆数据个数
+#define THERVREF  30	//参考电压  精度1mV
+
+typedef struct
+{
+	u16 acqvalue;	//采集的电压值
+	u8 acqdata;		
+}therdatastu;		//热电堆数据结构体
+
+extern sensoracqstu theracq;	//热电堆采集结构体
+extern therdatastu therdata; 	//热电堆数据结构体
+
+/******************************************************
+Fun:热电堆传感器采集开始
+Input:void
+Output:void
+Return:void
+******************************************************/
+void inline TherSensorAcqStart()
+{
+	theracq.acqflag = 1;
+}
+
+extern void TherSensorAcqHandle();
+//////////////////////////////华丽的分割线///////////////////////////
+
 /*----------------------------传感器采集----------------------------*/
+
 typedef struct
 {
 	u8 upsw;				//温湿度值上报控制
@@ -143,6 +238,12 @@ typedef struct
 
 typedef struct
 {
+	u8 upsw;			//CO2上报控制
+	u16 co2data;			//CO2上报数据 ppm
+}co2upstu;
+
+typedef struct
+{
 	u8 upsw;			//PM2.5上报控制
 	u16 countratio;		//粒子数/283mil
 	u16 massratio;		//质量浓度/立方米
@@ -151,10 +252,25 @@ typedef struct
 
 typedef struct
 {
+	u8 upsw;			//烟雾上报控制
+	u8 smokedata;		//烟雾上报数据 %
+}smokeupstu;			//烟雾上报数据结构体
+
+typedef struct
+{
+	u8 upsw;			//热电堆上报控制
+	u8 therdata;		//热电堆上报数据 
+}therupstu;			//热电堆上报数据结构体
+
+typedef struct
+{
 	u8 upsw;				//数据开关 1有效开始处理
 	HTupstu htup;			//温湿度上报数据
 	airquaupstu airquaup;	//空气质量上报数据
+	co2upstu co2up;			//CO2上传数据
 	pm25upstu	pm25up;		//PM2.5上报数据
+	smokeupstu  smokeup;	//烟雾上报数据
+	therupstu   therup;		//热电堆上报数据
 }acqupstu;				//采集上报数据结构体
 
 extern acqupstu acqdata;     //采集数据
